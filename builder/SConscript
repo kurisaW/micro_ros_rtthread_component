@@ -1,6 +1,7 @@
 from building import *
 import rtconfig
 import sys
+import os
 
 cwd = GetCurrentDir()
 sys.path.append(cwd)
@@ -26,7 +27,7 @@ clean_microros = env.GetOption("clean_microros") is not None
 
 if clean_microros:
 	print("Cleaning micro-ROS for RT-Thread\n")
-	rmtree(cwd + '\\libmicroros')
+	rmtree(cwd + '/libmicroros')
 
 #################################
 #### Build micro-ROS library ####
@@ -45,8 +46,9 @@ if build_microros:
 
 	print("Building micro-ROS for RT-Thread")
 
+
 	# Load micro-ROS build configuration
-	meta = MetaFileGenerator(cwd + '\\user.meta')
+	meta = MetaFileGenerator(cwd + '/user.meta')
 	meta.set_variable("rmw_microxrcedds", "RMW_UXRCE_MAX_NODES", int(GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_MAX_NODES')))
 	meta.set_variable("rmw_microxrcedds", "RMW_UXRCE_MAX_PUBLISHERS", int(GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_MAX_PUBLISHERS')))
 	meta.set_variable("rmw_microxrcedds", "RMW_UXRCE_MAX_SUBSCRIPTIONS", int(GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_MAX_SUBSCRIBERS')))
@@ -64,28 +66,28 @@ if build_microros:
 
 	# Launch micro-ROS builder
 	modified_env = env_handler.get_env()
-	builder = Build(library_folder=cwd, packages_folder=cwd + '\\extra_packages', distro=distro, env=modified_env)
-	builder.run(cwd + "\\toolchain.cmake", meta.path)
+	builder = Build(library_folder=cwd, packages_folder=cwd + '/extra_packages', distro=distro, env=modified_env)
+	builder.run(cwd + "/toolchain.cmake", meta.path)
 
 ################################
 #### Link micro-ROS library ####
 ################################
 
 # micro-ROS library
-INCLUDE_PATH = cwd + '\\libmicroros\\include'
-LIBPATH = [cwd + '\\libmicroros']
+INCLUDE_PATH = cwd + '/libmicroros/include'
+LIBPATH = [cwd + '/libmicroros']
 LIBS = ['microros']
 
 # Provided package sources
-package_cwd = os.path.abspath(GetCurrentDir() + "\\..")
-LOCAL_INCLUDE_PATH = package_cwd + '\\include'
-SRC_PATH = package_cwd + '\\src'
-EXAMPLES_PATH = package_cwd + '\\examples'
-SRC = [package_cwd + '\\src\\microros_time.c', package_cwd + '\\src\\microros_rtthread_net_transport.c']
+package_cwd = os.path.abspath(GetCurrentDir() + "/..")
+LOCAL_INCLUDE_PATH = package_cwd + '/include'
+SRC_PATH = package_cwd + '/src'
+EXAMPLES_PATH = package_cwd + '/examples'
+SRC = [package_cwd + '/src/microros_time.c', package_cwd + '/src/microros_rtthread_net_transport.c']
 
 if GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_EXAMPLES'):
-    SRC.append(package_cwd + '\\examples\\microros_pub.c')
-    SRC.append(package_cwd + '\\examples\\microros_sub.c')
+    SRC.append(package_cwd + '/examples/microros_pub.c')
+    SRC.append(package_cwd + '/examples/microros_sub.c')
 
 LOCAL_CCFLAGS = ''
 

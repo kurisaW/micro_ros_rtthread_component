@@ -15,7 +15,7 @@ index 04c7e15..7b5c4fd 100644
  add_custom_command(OUTPUT include/rcutils/logging_macros.h
    COMMAND ${CMAKE_COMMAND} -E make_directory "include/rcutils"
 -  COMMAND Python3::Interpreter ARGS -c "${python_code}"
-+  COMMAND py -3 ARGS -c "${python_code}"
++  COMMAND python3 ARGS -c "${python_code}"
    DEPENDS
      "${CMAKE_CURRENT_BINARY_DIR}/logging_macros.h.em.watch"
      "${CMAKE_CURRENT_BINARY_DIR}/logging.py.watch"
