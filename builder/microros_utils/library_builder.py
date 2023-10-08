@@ -4,13 +4,14 @@ import shutil
 import stat
 from distutils.dir_util import copy_tree
 
+import subprocess
 from .utils import run_cmd, rmtree
 from .repositories import Repository, Sources
 
 class Build:
     def __init__(self, library_folder, packages_folder, distro, env):
 
-        self.temp_folder = "/home/ubuntu/Temp/micro"
+        self.temp_folder = "/tmp/micro"
 
         self.library_folder = library_folder
         self.packages_folder = packages_folder
@@ -125,8 +126,10 @@ class Build:
         print("Building micro-ROS library")
         common_meta_path = self.library_folder + '/metas/common.meta'
         print(common_meta_path)
-        colcon_command = 'py -3 -m colcon build --merge-install --packages-ignore-regex=.*_cpp --metas {} {} --cmake-args -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=OFF -DTHIRDPARTY=ON -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release --toolchain={} -G "Unix Makefiles"'.format(common_meta_path, user_meta, toolchain_file)
-        command = "{}/install/setup.bat && {}".format(self.dev_folder, colcon_command)
+        colcon_command = 'python3 -m colcon build --merge-install --packages-ignore-regex=.*_cpp --metas {} {} --cmake-args -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=OFF -DTHIRDPARTY=ON -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release --toolchain={} -G "Unix Makefiles"'.format(common_meta_path, user_meta, toolchain_file)
+        command = "{}/install/setup.sh && {}".format(self.dev_folder, colcon_command)
+        chmod_cmd = "chmod +x /tmp/micro/dev/install/setup.sh"
+        subprocess.run(chmod_cmd, shell=True, check=True)
         result, stderr = run_cmd(command, env=self.env, cwd=self.mcu_folder)
 
         if 0 != result:
