@@ -2,27 +2,25 @@ from subprocess import PIPE, Popen
 import os
 import stat
 import json
+import platform
+import subprocess
+import shutil
 
 def run_cmd(command, env=None, capture_output=False, cwd=None):
 
-	if (capture_output):
-		p = Popen(command, shell=True, env=env, stdout=PIPE, stderr=PIPE, cwd=cwd)
-	else:
-		p = Popen(command, shell=True, env=env, cwd=cwd)
-
-	stdout, stderr = p.communicate()
-	return p.returncode, stderr
+    try:
+        if capture_output:
+            result = subprocess.run(command, shell=True, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, check=True, text=True)
+        else:
+            result = subprocess.run(command, shell=True, env=env, cwd=cwd, check=True)
+        
+        return result.returncode, result.stderr
+    except subprocess.CalledProcessError as e:
+        return e.returncode, e.stderr
 
 def rmtree(directory):
-    if (os.path.isdir(directory)):
-        for root, dirs, files in os.walk(directory, topdown=False):
-            for name in files:
-                filename = os.path.join(root, name)
-                os.chmod(filename, stat.S_IWUSR)
-                os.remove(filename)
-            for name in dirs:
-                os.rmdir(os.path.join(root, name))
-        os.rmdir(directory)
+    if os.path.exists(directory):
+        shutil.rmtree(directory)
 
 class EnvironmentHandler:
 	def __init__(self):
@@ -38,41 +36,40 @@ class EnvironmentHandler:
 		self.modified_env = os.environ.copy()
 
 	def find_and_set_python3(self):
-		path = self.modified_env['PATH'].split(";")
-		possible_python_path = [x for x in path if "Python3" in x and "Scripts" not in x]
-
-		if len(possible_python_path) >= 1:
-			python_script_path = [x for x in path if "Python3" in x and "Scripts" in x]
-			path.insert(0, possible_python_path[0])
-			path.insert(0, python_script_path[0])
-			self.set_environment_variable('PATH', ";".join(path))
-			self.set_environment_variable('PYTHONHOME', ";".join(possible_python_path))
-			self.set_environment_variable('PYTHONPATH', ";".join(possible_python_path))
-
-			# Check that pip is installed
-			run_cmd('py -3 -m ensurepip', env=self.modified_env, capture_output=True)
-
-			return True
+        # check os type
+		if platform.system() == "Windows":
+			python_executable = "python"
 		else:
+			python_executable = "python3"
+
+		try:
+			run_cmd(f"{python_executable} --version", capture_output=True)
+		except Exception:
 			return False
 
+        # set PATH
+		self.set_environment_variable('PATH', f"{python_executable}:{self.modified_env['PATH']}")
+
+		return True
+
 	def install_python_dependencies(self, deps):
-		# Install dependencies
-		pip_command = Popen('py -3 -m pip freeze', shell=True, env=self.modified_env, stdout=PIPE, stderr=PIPE)
-		stdout, stderr = pip_command.communicate()
-		pip_packages = [x.split("==")[0] for x in stdout.split('\n')]
+
+		try:
+			result = run_cmd(f"python3 -m pip freeze", env=self.modified_env, capture_output=True)
+			pip_packages = result[1].splitlines()
+		except Exception:
+			print("Error checking installed packages.")
+			return
+
 		required_packages = deps
-		to_install = []
-		for req in required_packages:
-			if req.split('==')[0].lower() not in [y.lower() for y in pip_packages]:
-				to_install.append(req)
+		to_install = [p for p in required_packages if p.lower() not in [pkg.split('==')[0].lower() for pkg in pip_packages]]
 
 		if len(to_install) == 0:
 			print("All required Python pip packages are installed")
 
 		for p in to_install:
-			print('Installing {} with pip at RT-Thread environment'.format(p))
-			run_cmd('py -3 -m pip install {}'.format(p), env=self.modified_env, capture_output=False)
+			print(f'Installing {p} with pip at RT-Thread environment')
+			result = run_cmd(f"python3 -m pip install {p}", env=self.modified_env, capture_output=False)
 
 class MetaFileGenerator:
 	def __init__(self, path):
