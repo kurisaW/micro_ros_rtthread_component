@@ -60,6 +60,8 @@ class EnvironmentHandler:
 		# Install dependencies
 		pip_command = Popen('py -3 -m pip freeze', shell=True, env=self.modified_env, stdout=PIPE, stderr=PIPE)
 		stdout, stderr = pip_command.communicate()
+		# pip_packages = [x.split("==")[0] for x in stdout.split('\n')]
+		stdout = stdout.decode('utf-8')
 		pip_packages = [x.split("==")[0] for x in stdout.split('\n')]
 		required_packages = deps
 		to_install = []
