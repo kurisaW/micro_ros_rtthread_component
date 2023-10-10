@@ -115,7 +115,7 @@ class Sources:
             Repository("Micro-XRCE-DDS-Client", "https://github.com/kurisaW/Micro-XRCE-DDS-Client", "foxy-b"),
             Repository("rcl", "https://github.com/micro-ROS/rcl", "foxy"),
             Repository("rclc", "https://github.com/ros2/rclc", "foxy"),
-            Repository("rcutils", "https://github.com/micro-ROS/rcutils", "foxy"),
+            Repository("rcutils", "https://github.com/kurisaW/rcutils", "foxy-b"),
             Repository("micro_ros_msgs", "https://github.com/micro-ROS/micro_ros_msgs", "foxy"),
             Repository("rmw-microxrcedds", "https://github.com/micro-ROS/rmw-microxrcedds", "foxy"),
             Repository("rosidl_typesupport", "https://github.com/micro-ROS/rosidl_typesupport", "foxy"),
