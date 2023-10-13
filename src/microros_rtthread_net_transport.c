@@ -3,6 +3,7 @@
 #include <rtthread.h>
 #include <sys/socket.h>
 #include "netdb.h"
+#include <sys/select.h>
 
 #include <rtdbg.h>
 

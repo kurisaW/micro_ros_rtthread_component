@@ -6,6 +6,7 @@ from distutils.dir_util import copy_tree
 
 from .utils import run_cmd, rmtree
 from .repositories import Repository, Sources
+import pdb
 
 class Build:
     def __init__(self, library_folder, packages_folder, distro, env):
@@ -139,11 +140,14 @@ class Build:
         os.makedirs(aux_folder)
         os.makedirs(aux_naming_folder)
         os.makedirs(self.library_path)
+        print("-----------aux folder was created--------------------")
+        pdb.set_trace()
 
         AR = rtconfig.PREFIX + 'ar'
         # Generate object files with namespace prefix
         obj_list = []
         os.chdir(aux_naming_folder)
+        # print("-------------Generate object files with namespace prefix------------")
         for root, dirs, files in os.walk(self.mcu_folder + "\\install\\lib"):
             for f in files:
                 if f.endswith('.a'):
@@ -152,9 +156,12 @@ class Build:
                         updated_name = f.split('.')[0] + "__" + obj
                         os.rename(obj, '..\\' + updated_name)
                         obj_list.append(updated_name)
+                        print("updated_name:" + updated_name)
+        # pdb.set_trace()
 
         # Create linker script
         os.chdir(aux_folder)
+        # create a ar_script.m file to cover content:$(ar_script.write(content))
         with open("ar_script.m", "w+") as ar_script:
             ar_script.write("CREATE libmicroros.a\n")
 
@@ -163,10 +170,14 @@ class Build:
 
             ar_script.write("SAVE\n")
             ar_script.write("END")
+            print("------------element end--------------------")
+            pdb.set_trace()
 
         # Execute linker script
         command = "{} -M < ar_script.m".format(AR)
         result, stderr = run_cmd(command, env=self.env)
+        pdb.set_trace()
+        print("-------------Execute linker script-------------")
 
         if 0 != result:
             print("micro-ROS static library build failed\n")
@@ -188,6 +199,7 @@ class Build:
                 if os.path.exists(repeated_path):
                     copy_tree(repeated_path, folder_path)
                     rmtree(repeated_path)
+                    print("------------Fix include paths------------------")
 
 
 class CMakeToolchain:
