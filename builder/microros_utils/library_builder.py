@@ -163,6 +163,7 @@ class Build:
         os.chdir(aux_folder)
         # create a ar_script.m file to cover content:$(ar_script.write(content))
         with open("ar_script.m", "w+") as ar_script:
+            print("------------element start--------------------")
             ar_script.write("CREATE libmicroros.a\n")
 
             for element in obj_list:

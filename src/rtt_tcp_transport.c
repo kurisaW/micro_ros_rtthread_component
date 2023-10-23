@@ -28,6 +28,17 @@ static struct sockaddr_in server_addr;
 //     return 0;
 // }
 
+// int clock_gettime(clockid_t unused, struct timespec *tp)
+// {
+//     (void)unused;
+
+//     uint64_t m = rt_tick_get() * 1000 / RT_TICK_PER_SECOND * 1000;
+//     tp->tv_sec = m / 1000000;
+//     tp->tv_nsec = (m % 1000000) * 1000;
+
+//     return 0;
+// }
+
 bool micro_ros_tcp_transport_open(struct uxrCustomTransport * transport)
 {
     struct micro_ros_agent_locator* locator = (struct micro_ros_agent_locator *) transport->args;

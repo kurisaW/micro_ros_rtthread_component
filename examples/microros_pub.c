@@ -1,8 +1,9 @@
 #include <rtthread.h>
-#include <rtdbg.h>
 
-#include <microros_rtthread_net_transport.h>
-#include <microros_allocators.h>
+#if defined PKG_MICRO_ROS_USE_SERIAL
+
+#include <micro_ros_rtt.h>
+#include <stdio.h>
 
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
@@ -10,9 +11,6 @@
 #include <rclc/executor.h>
 
 #include <std_msgs/msg/int32.h>
-
-#define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){ LOG_E("micro-ROS error line %d ! \r\n", __LINE__); return; }}
-#define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){LOG_W("micro-ROS error on line %d, Continuing\r\n", __LINE__);}}
 
 static rcl_publisher_t publisher;
 static std_msgs__msg__Int32 msg;
@@ -25,87 +23,97 @@ static rcl_node_t node;
 static rcl_timer_t timer;
 
 static void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
-{
-    (void) last_call_time;
-
-    if (timer != NULL)
+{  
+    // RCLC_UNUSED(last_call_time);
+    if (timer != NULL) 
     {
-        RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
-        LOG_I("[microros] Publish data: %d", msg.data);
+        rcl_publish(&publisher, &msg, NULL);
         msg.data++;
     }
+    else {
+        rt_kprintf("[micro_ros] timer null\n");
+    }
 }
 
-static void microros_pub_thread_entry(void *parameter)
+static void microros_pub_int32_thread_entry(void *parameter)
 {
-    (void) parameter;
-
     while(1)
     {
-        RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
         rt_thread_mdelay(100);
+        rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
     }
 }
 
-static void microros_pub(int argc, char* argv[])
+static void microros_pub_int32(int argc, char* argv[])
 {
-    if (3 > argc || 0 == atoi(argv[2]))
-    {
-        LOG_E("Expected arguments: IP Port\n");
-        return;
-    }
+#if defined PKG_MICRO_ROS_USE_SERIAL
+    // Serial setup
+     set_microros_transports();
+#endif
 
-    // Configure network transport
-    char * agent_address = argv[1];
-    uint16_t agent_port = (uint16_t)atoi(argv[2]);
-    set_microros_net_transport(agent_address, agent_port);
+#if defined PKG_MICRO_ROS_USE_TCP
+    // TCP setup
+     set_microros_tcp_transports("192.168.226.67", 9999);
+#endif
+
+#if defined PKG_MICRO_ROS_USE_UDP
+    // UDP setup
+     set_microros_udp_transports("192.168.226.67", 9999);
+#endif
 
     allocator = rcl_get_default_allocator();
 
-    // Initialize micro-ROS
-    RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
-    LOG_D("[microros] Connected to agent");
+    //create init_options
+    if (rclc_support_init(&support, 0, NULL, &allocator) != RCL_RET_OK)
+    {
+        rt_kprintf("[micro_ros] failed to initialize\n");
+        return;
+    };
 
-    // Create node
-    RCCHECK(rclc_node_init_default(&node, "microros_pub_node", "", &support));
-    LOG_D("[microros] Node created");
+    // create node
+    if (rclc_node_init_default(&node, "micro_ros_rtt_node", "", &support) != RCL_RET_OK)
+    {
+        rt_kprintf("[micro_ros] failed to create node\n");
+        return;
+    }
+    rt_kprintf("[micro_ros] node created\n");
 
-    // Create publisher
-    RCCHECK(rclc_publisher_init_default(
+    // create publisher
+    rclc_publisher_init_default(
       &publisher,
       &node,
       ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-      "microros_pub"));
+      "micro_ros_rtt_node_publisher");
 
-    LOG_D("[microros] Publisher created");
+    rt_kprintf("[micro_ros] publisher created\n");
 
     // create timer
     const unsigned int timer_timeout = 1000;
-    RCCHECK(rclc_timer_init_default(
+    rclc_timer_init_default(
       &timer,
       &support,
       RCL_MS_TO_NS(timer_timeout),
-      timer_callback));
-
-    LOG_D("[microros] Timer created");
+      timer_callback);
+    rt_kprintf("[micro_ros] timer created\n");
 
     // create executor
-    RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
-    RCCHECK(rclc_executor_add_timer(&executor, &timer));
-
-    LOG_D("[microros] Executor created");
+    rclc_executor_init(&executor, &support.context, 1, &allocator);
+    rclc_executor_add_timer(&executor, &timer);
+    rt_kprintf("[micro_ros] executor created\n");
 
     msg.data = 0;
 
-    rt_thread_t thread = rt_thread_create("microros_pub", microros_pub_thread_entry, RT_NULL, 2048, 25, 10);
+    rt_thread_t thread = rt_thread_create("mr_pubint32", microros_pub_int32_thread_entry, RT_NULL, 2048, 25, 10);
     if(thread != RT_NULL)
     {
-        LOG_I("[microros] Start executor thread");
         rt_thread_startup(thread);
+        rt_kprintf("[micro_ros] New thread mr_pubint32\n");
     }
     else
     {
-        LOG_E("[microros] Failed to create executor thread");
+        rt_kprintf("[micro_ros] Failed to create thread mr_pubint32\n");
     }
 }
-MSH_CMD_EXPORT(microros_pub, microros publisher example)
+MSH_CMD_EXPORT(microros_pub_int32, microros publish int32 example)
+
+#endif // PKG_MICRO_ROS_USE_SERIAL

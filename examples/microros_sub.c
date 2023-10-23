@@ -1,8 +1,19 @@
+/*
+ * Copyright (c) 2006-2021, RT-Thread Development Team
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Change Logs:
+ * Date           Author       Notes
+ * 2021-06-11     hw630       the first version
+ */
+
 #include <rtthread.h>
-#include <rtdbg.h>
+#include <rtdevice.h>
+#include <micro_ros_rtt.h>  
+#include <board.h>
 
-#include <microros_rtthread_net_transport.h>
-
+#include <stdio.h>
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
 #include <rclc/rclc.h>
@@ -10,80 +21,91 @@
 
 #include <std_msgs/msg/int32.h>
 
-#define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){ LOG_E("micro-ROS error line %d ! \r\n", __LINE__); return; }}
-#define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){LOG_W("micro-ROS error on line %d, Continuing\r\n", __LINE__);}}
+rcl_subscription_t subscriber;
+std_msgs__msg__Int32 msg;
+rclc_executor_t executor;
+rclc_support_t support;
+rcl_allocator_t allocator;
+rcl_node_t node;
 
-static rcl_subscription_t subscriber;
-static std_msgs__msg__Int32 msg;
-
-static rclc_executor_t executor;
-static rclc_support_t support;
-static rcl_allocator_t allocator;
-
-static rcl_node_t node;
+#define LED_PIN    GET_PIN(F, 11)
 
 static void subscription_callback(const void * msgin)
 {
     const std_msgs__msg__Int32 * msg = (const std_msgs__msg__Int32 *)msgin;
-    LOG_I("[microros] Received data: %d", msg->data);
+    rt_kprintf("[micro_ros] received data %d\n", msg->data);
+    rt_pin_write(LED_PIN, (msg->data == 0) ? 0 : 1);
 }
 
-static void microros_sub_thread_entry(void *parameter)
+static void microros_sub_int32_thread_entry(void *parameter)
 {
-    (void) parameter;
-
     while(1)
     {
-        RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(1000)));
         rt_thread_mdelay(100);
+        rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
     }
 }
 
-static void microros_sub(int argc, char* argv[])
+static void microros_sub_int32(int argc, char* argv[])
 {
-    if (3 > argc || 0 == atoi(argv[2]))
-    {
-        LOG_E("Expected arguments: IP Port\n");
-        return;
-    }
+#if defined PKG_MICRO_ROS_USE_SERIAL
+    // Serial setup
+     set_microros_transports();
+#endif
 
-    // Configure network transport
-    char * agent_address = argv[1];
-    uint16_t agent_port = (uint16_t)atoi(argv[2]);
-    set_microros_net_transport(agent_address, agent_port);
+#if defined PKG_MICRO_ROS_USE_TCP
+    // TCP setup
+     set_microros_tcp_transports("192.168.226.67", 9999);
+#endif
+
+#if defined PKG_MICRO_ROS_USE_UDP
+    // UDP setup
+     set_microros_udp_transports("192.168.226.67", 9999);
+#endif
+
+    rt_pin_mode(LED_PIN, PIN_MODE_OUTPUT);
 
     allocator = rcl_get_default_allocator();
 
-    // Initialize micro-ROS
-    RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
-    LOG_D("[microros] Connected to agent");
+    //create init_options
+    if (rclc_support_init(&support, 0, NULL, &allocator) != RCL_RET_OK)
+    {
+        rt_kprintf("[micro_ros] failed to initialize\n");
+        return;
+    };
 
-    // Create node
-    RCCHECK(rclc_node_init_default(&node, "microros_sub_node", "", &support));
-    LOG_D("[microros] Node created");
+    // create node
+    if (rclc_node_init_default(&node, "micro_ros_rtt_sub_int32_node", "", &support) != RCL_RET_OK)
+    {
+        rt_kprintf("[micro_ros] failed to create node\n");
+        return;
+    }
+    rt_kprintf("[micro_ros] node created\n");
 
-    // Create subscriber
-    RCCHECK(rclc_subscription_init_default(
+    // create subscriber
+    rclc_subscription_init_default(
       &subscriber,
       &node,
       ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-      "microros_sub_topic"));
-    LOG_D("[microros] Subscriber created");
+      "micro_ros_rtt_subscriber");
 
     // create executor
-    RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
-    RCCHECK(rclc_executor_add_subscription(&executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
-    LOG_D("[microros] Executor created");
+    rclc_executor_init(&executor, &support.context, 1, &allocator);
+    rclc_executor_add_subscription(&executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA);
+    rt_kprintf("[micro_ros] executor created\n");
 
-    rt_thread_t thread = rt_thread_create("microros_sub", microros_sub_thread_entry, RT_NULL, 2048, 25, 10);
+    rt_thread_t thread = rt_thread_create("mr_subint32", microros_sub_int32_thread_entry, RT_NULL, 2048, 25, 10);
     if(thread != RT_NULL)
     {
-        LOG_I("[microros] Start executor thread");
         rt_thread_startup(thread);
+        rt_kprintf("[micro_ros] New thread mr_subint32\n");
     }
     else
     {
-        LOG_E("[microros] Failed to create executor thread");
+        rt_kprintf("[micro_ros] Failed to create thread mr_subint32\n");
     }
+
+    // now you can publish a message to turn on/off the LED
+    // ros2 topic pub --once /micro_ros_rtt_subscriber std_msgs/msg/Int32 data:\ 0
 }
-MSH_CMD_EXPORT(microros_sub, microros subscriber example)
+MSH_CMD_EXPORT(microros_sub_int32, micro ros subscribe int32 example)

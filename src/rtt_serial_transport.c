@@ -66,7 +66,7 @@ static rt_device_t micro_ros_serial;
     #define MICRO_ROS_SERIAL_NAME "uart3"
 #endif
 
-// #define micro_rollover_useconds 4294967295
+#define micro_rollover_useconds 4294967295
 // int clock_gettime(clockid_t unused, struct timespec *tp)
 // {
 //     (void)unused;
@@ -77,6 +77,7 @@ static rt_device_t micro_ros_serial;
 
 //     return 0;
 // }
+
 
 static rt_err_t uart_input(rt_device_t dev, rt_size_t size)
 {

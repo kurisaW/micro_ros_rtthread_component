@@ -60,7 +60,7 @@ bool micro_ros_udp_transport_open(struct uxrCustomTransport * transport)
         rt_kprintf("Connect fail!\n", sock);
         return 0;
     }
-     rt_kprintf("Connect sucessful!\n", sock);
+     rt_kprintf("%d:Connect sucessful!\n", sock);
     return 1;
 }
 
