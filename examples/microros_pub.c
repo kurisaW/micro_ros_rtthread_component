@@ -53,15 +53,16 @@ static void microros_pub_int32(int argc, char* argv[])
 
 #if defined PKG_MICRO_ROS_USE_TCP
     // TCP setup
-     set_microros_tcp_transports("192.168.226.67", 9999);
+     set_microros_tcp_transports("172.17.3.205", 8888);
 #endif
 
 #if defined PKG_MICRO_ROS_USE_UDP
     // UDP setup
-     set_microros_udp_transports("192.168.226.67", 9999);
+     set_microros_udp_transports("172.17.3.205", 8888);
 #endif
 
     allocator = rcl_get_default_allocator();
+    rt_kprintf("rcl_get_default_allocator\n");
 
     //create init_options
     if (rclc_support_init(&support, 0, NULL, &allocator) != RCL_RET_OK)
@@ -69,6 +70,7 @@ static void microros_pub_int32(int argc, char* argv[])
         rt_kprintf("[micro_ros] failed to initialize\n");
         return;
     };
+    rt_kprintf("rclc_support_init\n");
 
     // create node
     if (rclc_node_init_default(&node, "micro_ros_rtt_node", "", &support) != RCL_RET_OK)

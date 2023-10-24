@@ -17,7 +17,7 @@ static int sock;
 static struct hostent *host;
 static struct sockaddr_in server_addr;
 
-#define micro_rollover_useconds 4294967295
+// #define micro_rollover_useconds 4294967295
 
 // int clock_gettime(clockid_t unused, struct timespec *tp)
 // {

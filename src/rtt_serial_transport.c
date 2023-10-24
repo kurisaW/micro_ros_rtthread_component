@@ -59,29 +59,27 @@ char __EXPORT *__ctype_ptr__ = (char *) _ctype_b + 127;
 #include <rtdbg.h>
 
 static int sem_initialized = 0;
-static struct rt_semaphore rx_sem;
+static struct rt_semaphore micro_ros_rx_sem;
 static rt_device_t micro_ros_serial;
 
 #ifndef MICRO_ROS_SERIAL_NAME
-    #define MICRO_ROS_SERIAL_NAME "uart3"
+    #define MICRO_ROS_SERIAL_NAME "uart1"
 #endif
 
-#define micro_rollover_useconds 4294967295
-// int clock_gettime(clockid_t unused, struct timespec *tp)
-// {
-//     (void)unused;
+int clock_gettime(clockid_t unused, struct timespec *tp)
+{
+    (void)unused;
 
-//     uint64_t m = rt_tick_get() * 1000 / RT_TICK_PER_SECOND * 1000;
-//     tp->tv_sec = m / 1000000;
-//     tp->tv_nsec = (m % 1000000) * 1000;
+    uint64_t m = rt_tick_get() * 1000 / RT_TICK_PER_SECOND * 1000;
+    tp->tv_sec = m / 1000000;
+    tp->tv_nsec = (m % 1000000) * 1000;
 
-//     return 0;
-// }
-
+    return 0;
+}
 
 static rt_err_t uart_input(rt_device_t dev, rt_size_t size)
 {
-    rt_sem_release(&rx_sem);
+    rt_sem_release(&micro_ros_rx_sem);
 
     return RT_EOK;
 }
@@ -96,7 +94,7 @@ bool micro_ros_serial_transport_open(struct uxrCustomTransport * transport)
     }
     if(sem_initialized == 0)
     {
-        rt_sem_init(&rx_sem, "micro_ros_rx_sem", 0, RT_IPC_FLAG_FIFO);
+        rt_sem_init(&micro_ros_rx_sem, "micro_ros_rx_sem", 0, RT_IPC_FLAG_FIFO);
         sem_initialized = 1;
     }
     rt_device_open(micro_ros_serial, RT_DEVICE_FLAG_INT_RX);
@@ -107,7 +105,7 @@ bool micro_ros_serial_transport_open(struct uxrCustomTransport * transport)
 bool micro_ros_serial_transport_close(struct uxrCustomTransport * transport)
 {
     rt_device_close(micro_ros_serial);
-    rt_sem_detach(&rx_sem);
+    rt_sem_detach(&micro_ros_rx_sem);
     sem_initialized = 0;
     return 1;
 }
@@ -117,6 +115,7 @@ size_t micro_ros_serial_transport_write(struct uxrCustomTransport * transport, c
     return rt_device_write(micro_ros_serial, 0, buf, len);
 }
 
+//  bytes_read[0] = read_cb(cb_arg, &framing_io->rb[framing_io->rb_head], av_len[0], *timeout, errcode);
 size_t micro_ros_serial_transport_read(struct uxrCustomTransport * transport, uint8_t *buf, size_t len, int timeout, uint8_t *errcode)
 {
     int tick = rt_tick_get();
@@ -124,15 +123,18 @@ size_t micro_ros_serial_transport_read(struct uxrCustomTransport * transport, ui
     {
         if(sem_initialized == 0)
         {
-            rt_sem_init(&rx_sem, "micro_ros_rx_sem", 0, RT_IPC_FLAG_FIFO);
+            rt_sem_init(&micro_ros_rx_sem, "micro_ros_rx_sem", 0, RT_IPC_FLAG_FIFO);
             sem_initialized = 1;
         }
         while (rt_device_read(micro_ros_serial, -1, &buf[i], 1) != 1)
         {
-            rt_sem_take(&rx_sem, timeout / 4);
-            if( (rt_tick_get() - tick) > timeout )
+            rt_sem_take(&micro_ros_rx_sem, timeout / 4);
+            int ret_tick = rt_tick_get() - tick;
+            // if( (rt_tick_get() - tick) > timeout )
+            if(ret_tick > timeout)
             {
-                // LOG_E("Read timeout");
+                LOG_E("[i:%d][current_tick]:%d    [ret_tick]:%d    [timeout]:%d    [len]:%d    [buf]:%s",i,rt_tick_get(),ret_tick,timeout,len,&buf);
+                LOG_E("Read timeout");
                 return i;
             }
         }

@@ -140,8 +140,6 @@ class Build:
         os.makedirs(aux_folder)
         os.makedirs(aux_naming_folder)
         os.makedirs(self.library_path)
-        print("-----------aux folder was created--------------------")
-        pdb.set_trace()
 
         AR = rtconfig.PREFIX + 'ar'
         # Generate object files with namespace prefix
@@ -163,7 +161,6 @@ class Build:
         os.chdir(aux_folder)
         # create a ar_script.m file to cover content:$(ar_script.write(content))
         with open("ar_script.m", "w+") as ar_script:
-            print("------------element start--------------------")
             ar_script.write("CREATE libmicroros.a\n")
 
             for element in obj_list:
@@ -171,14 +168,10 @@ class Build:
 
             ar_script.write("SAVE\n")
             ar_script.write("END")
-            print("------------element end--------------------")
-            pdb.set_trace()
 
         # Execute linker script
         command = "{} -M < ar_script.m".format(AR)
         result, stderr = run_cmd(command, env=self.env)
-        pdb.set_trace()
-        print("-------------Execute linker script-------------")
 
         if 0 != result:
             print("micro-ROS static library build failed\n")
@@ -200,7 +193,6 @@ class Build:
                 if os.path.exists(repeated_path):
                     copy_tree(repeated_path, folder_path)
                     rmtree(repeated_path)
-                    print("------------Fix include paths------------------")
 
 
 class CMakeToolchain:
