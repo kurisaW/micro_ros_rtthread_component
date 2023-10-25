@@ -77,26 +77,23 @@ LIBPATH = [cwd + '\\libmicroros']
 LIBS = ['microros']
 
 # Provided package sources
-package_cwd = os.path.abspath(GetCurrentDir() + "\\..")
+package_cwd = ('..\\')
 LOCAL_INCLUDE_PATH = package_cwd + '\\include'
-SRC_PATH = package_cwd + '\\src'
 EXAMPLES_PATH = package_cwd + '\\examples'
 if GetDepend('PKG_MICRO_ROS_USE_SERIAL'):
-    SRC = [package_cwd + '\\src\\microros_rtthread_net_transport.c', package_cwd + '\\src\\rtt_serial_transport.c']
+    SRC = [package_cwd + '\\src\\rtt_serial_transport.c']
 elif GetDepend('PKG_MICRO_ROS_USE_TCP'):
-    SRC = [package_cwd + '\\src\\microros_rtthread_net_transport.c', package_cwd + '\\src\\rtt_tcp_transport.c']
-elif GetDepend('PKG_MICRO_ROS_USE_UDP'):
-    SRC = [package_cwd + '\\src\\microros_rtthread_net_transport.c', package_cwd + '\\src\\rtt_udp_transport.c']
+    SRC = [package_cwd + '\\src\\rtt_tcp_transport.c']
+else:
+    SRC = [package_cwd + '\\src\\rtt_udp_transport.c']
 
 
 if GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_EXAMPLES'):
     SRC.append(package_cwd + '\\examples\\microros_pub.c')
     SRC.append(package_cwd + '\\examples\\microros_sub.c')
-    SRC.append(package_cwd + '\\examples\\pub_b.c')
-    SRC.append(package_cwd + '\\examples\\sub_b.c')
     SRC.append(package_cwd + '\\examples\\micro_ros_ping_pong.c')
     
 LOCAL_CCFLAGS = ''
 
-group = DefineGroup('microros', SRC, depend = [], CPPPATH = [INCLUDE_PATH, LOCAL_INCLUDE_PATH, SRC_PATH, EXAMPLES_PATH], LOCAL_CCFLAGS = LOCAL_CCFLAGS, LIBS = LIBS, LIBPATH = LIBPATH)
+group = DefineGroup('microros', SRC, depend = [], CPPPATH = [INCLUDE_PATH, LOCAL_INCLUDE_PATH, EXAMPLES_PATH], LOCAL_CCFLAGS = LOCAL_CCFLAGS, LIBS = LIBS, LIBPATH = LIBPATH)
 Return('group')

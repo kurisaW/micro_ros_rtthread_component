@@ -63,7 +63,7 @@ static struct rt_semaphore micro_ros_rx_sem;
 static rt_device_t micro_ros_serial;
 
 #ifndef MICRO_ROS_SERIAL_NAME
-    #define MICRO_ROS_SERIAL_NAME "uart1"
+    #define MICRO_ROS_SERIAL_NAME "vcom"
 #endif
 
 int clock_gettime(clockid_t unused, struct timespec *tp)
@@ -129,12 +129,9 @@ size_t micro_ros_serial_transport_read(struct uxrCustomTransport * transport, ui
         while (rt_device_read(micro_ros_serial, -1, &buf[i], 1) != 1)
         {
             rt_sem_take(&micro_ros_rx_sem, timeout / 4);
-            int ret_tick = rt_tick_get() - tick;
-            // if( (rt_tick_get() - tick) > timeout )
-            if(ret_tick > timeout)
+            if( (rt_tick_get() - tick) > timeout )
             {
-                LOG_E("[i:%d][current_tick]:%d    [ret_tick]:%d    [timeout]:%d    [len]:%d    [buf]:%s",i,rt_tick_get(),ret_tick,timeout,len,&buf);
-                LOG_E("Read timeout");
+                // LOG_E("Read timeout");
                 return i;
             }
         }

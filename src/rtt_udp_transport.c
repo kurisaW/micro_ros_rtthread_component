@@ -17,25 +17,25 @@ static int sock;
 static struct hostent *host;
 static struct sockaddr_in server_addr;
 
-// #define micro_rollover_useconds 4294967295
+#define micro_rollover_useconds 4294967295
 
-// int clock_gettime(clockid_t unused, struct timespec *tp)
-// {
-//     (void)unused;
-//     static uint32_t rollover = 0;
-//     static uint32_t last_measure = 0;
+int clock_gettime(clockid_t unused, struct timespec *tp)
+{
+    (void)unused;
+    static uint32_t rollover = 0;
+    static uint32_t last_measure = 0;
 
-//     uint64_t m = rt_tick_get() * 1000 / RT_TICK_PER_SECOND * 1000;
+    uint64_t m = rt_tick_get() * 1000 / RT_TICK_PER_SECOND * 1000;
 
-//     rollover += (m < last_measure) ? 1 : 0;
+    rollover += (m < last_measure) ? 1 : 0;
 
-//     rt_uint64_t real_us = (rt_uint64_t) (m + rollover * micro_rollover_useconds);
+    rt_uint64_t real_us = (rt_uint64_t) (m + rollover * micro_rollover_useconds);
 
-//     tp->tv_sec = real_us / 1000000;
-//     tp->tv_nsec = (real_us % 1000000) * 1000;
-//     last_measure = m;
-//     return 0;
-// }
+    tp->tv_sec = real_us / 1000000;
+    tp->tv_nsec = (real_us % 1000000) * 1000;
+
+    return 0;
+}
 
 bool micro_ros_udp_transport_open(struct uxrCustomTransport * transport)
 {

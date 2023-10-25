@@ -11,14 +11,13 @@
 #include <uxr/client/transport.h>
 #include <rmw_microros/rmw_microros.h>
 
-extern int clock_gettime(clockid_t unused, struct timespec *tp);
-
 #if defined PKG_MICRO_ROS_USE_SERIAL
 
 bool   micro_ros_serial_transport_open(struct uxrCustomTransport * transport);
 bool   micro_ros_serial_transport_close(struct uxrCustomTransport * transport);
 size_t micro_ros_serial_transport_write(struct uxrCustomTransport* transport, const uint8_t * buf, size_t len, uint8_t * err);
 size_t micro_ros_serial_transport_read(struct uxrCustomTransport* transport, uint8_t* buf, size_t len, int timeout, uint8_t* err);
+int clock_gettime(clockid_t unused, struct timespec *tp);
 
 static inline void set_microros_transports(){
 	rmw_uros_set_custom_transport(
@@ -39,6 +38,7 @@ bool   micro_ros_tcp_transport_open(struct uxrCustomTransport * transport);
 bool   micro_ros_tcp_transport_close(struct uxrCustomTransport * transport);
 size_t micro_ros_tcp_transport_write(struct uxrCustomTransport* transport, const uint8_t * buf, size_t len, uint8_t * err);
 size_t micro_ros_tcp_transport_read(struct uxrCustomTransport* transport, uint8_t* buf, size_t len, int timeout, uint8_t* err);
+int clock_gettime(clockid_t unused, struct timespec *tp);
 
 struct micro_ros_agent_locator {
     char* address;
@@ -68,6 +68,7 @@ bool   micro_ros_udp_transport_open(struct uxrCustomTransport * transport);
 bool   micro_ros_udp_transport_close(struct uxrCustomTransport * transport);
 size_t micro_ros_udp_transport_write(struct uxrCustomTransport* transport, const uint8_t * buf, size_t len, uint8_t * err);
 size_t micro_ros_udp_transport_read(struct uxrCustomTransport* transport, uint8_t* buf, size_t len, int timeout, uint8_t* err);
+int clock_gettime(clockid_t unused, struct timespec *tp);
 
 struct micro_ros_agent_locator {
     char* address;
