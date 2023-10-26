@@ -12,6 +12,10 @@
 
 #include <std_msgs/msg/int32.h>
 
+#define DBG_TAG "pub_example"
+#define DBG_LVL DBG_INFO 
+#include <rtdbg.h>
+
 static rcl_publisher_t publisher;
 static std_msgs__msg__Int32 msg;
 
@@ -46,20 +50,8 @@ static void microros_pub_int32_thread_entry(void *parameter)
 
 static void microros_pub_int32(int argc, char* argv[])
 {
-#if defined PKG_MICRO_ROS_USE_SERIAL
     // Serial setup
      set_microros_transports();
-#endif
-
-#if defined PKG_MICRO_ROS_USE_TCP
-    // TCP setup
-     set_microros_tcp_transports("172.17.3.205", 8888);
-#endif
-
-#if defined PKG_MICRO_ROS_USE_UDP
-    // UDP setup
-     set_microros_udp_transports("172.17.3.205", 8888);
-#endif
 
     allocator = rcl_get_default_allocator();
     rt_kprintf("rcl_get_default_allocator\n");

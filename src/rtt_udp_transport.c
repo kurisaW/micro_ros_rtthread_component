@@ -33,6 +33,8 @@ int clock_gettime(clockid_t unused, struct timespec *tp)
 
     tp->tv_sec = real_us / 1000000;
     tp->tv_nsec = (real_us % 1000000) * 1000;
+    
+    last_measure = m;
 
     return 0;
 }
@@ -41,14 +43,14 @@ bool micro_ros_udp_transport_open(struct uxrCustomTransport * transport)
 {
     struct micro_ros_agent_locator* locator = (struct micro_ros_agent_locator *) transport->args;
 
-    host = (struct hostent *) gethostbyname( locator->address );
-
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
     {
         LOG_E("Socket error\n");
         closesocket(sock);
         return 0;
     }
+
+    host = (struct hostent *) gethostbyname( locator->address );
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(locator->port);

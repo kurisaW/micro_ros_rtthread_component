@@ -21,6 +21,10 @@
 
 #include <std_msgs/msg/int32.h>
 
+#define DBG_TAG "sub_example"
+#define DBG_LVL DBG_INFO 
+#include <rtdbg.h>
+
 rcl_subscription_t subscriber;
 std_msgs__msg__Int32 msg;
 rclc_executor_t executor;
@@ -53,14 +57,23 @@ static void microros_sub_int32(int argc, char* argv[])
      set_microros_transports();
 #endif
 
-#if defined PKG_MICRO_ROS_USE_TCP
-    // TCP setup
-     set_microros_tcp_transports("172.17.3.205", 8888);
-#endif
-
 #if defined PKG_MICRO_ROS_USE_UDP
     // UDP setup
-     set_microros_udp_transports("172.17.3.205", 8888);
+     if(argc == 1) 
+     {
+        LOG_E("Parameter error! Specify the IP address and port number of the agent.");
+        return;
+     }
+     else if(argc == 2) 
+     {
+        set_microros_udp_transports(argv[1], 9999);
+        LOG_I("The current proxy IP address is [%s] | default port is [9999].",argv[1]);
+     }
+     else 
+     {
+        set_microros_udp_transports(argv[1], (atoi)(argv[2]));
+        LOG_I("The current proxy IP address is [%s] | Agent port is [%s].",argv[1], argv[2]);
+     }
 #endif
 
     rt_pin_mode(LED_PIN, PIN_MODE_OUTPUT);

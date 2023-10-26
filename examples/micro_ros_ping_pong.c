@@ -103,11 +103,20 @@ static void microros_ping_pong(int argc,char* argv[])
 
 #if defined PKG_MICRO_ROS_USE_UDP
     // UDP setup
-     if(argc==2) {
-         set_microros_udp_transports(argv[1], 9999);
+     if(argc == 1) 
+     {
+        LOG_E("Parameter error! Specify the IP address and port number of the agent.");
+        return;
      }
-     else {
-         set_microros_udp_transports("192.168.226.16", 9999);
+     else if(argc == 2) 
+     {
+        set_microros_udp_transports(argv[1], 9999);
+        LOG_I("The current proxy IP address is [%s] | default port is [9999].",argv[1]);
+     }
+     else 
+     {
+        set_microros_udp_transports(argv[1], (atoi)(argv[2]));
+        LOG_I("The current proxy IP address is [%s] | Agent port is [%s].",argv[1], argv[2]);
      }
 #endif
 
