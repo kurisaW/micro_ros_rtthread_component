@@ -1,0 +1,25 @@
+diff --git a/rclc/CMakeLists.txt b/rclc/CMakeLists.txt
+index d9eee30..f5f60a8 100644
+--- a/rclc/CMakeLists.txt
++++ b/rclc/CMakeLists.txt
+@@ -4,7 +4,6 @@ project(rclc)
+ 
+ set(CMAKE_VERBOSE_MAKEFILE ON)
+ 
+-
+ #################################################
+ # compiler settings
+ #################################################
+diff --git a/rclc/src/rclc/sleep.c b/rclc/src/rclc/sleep.c
+index e9dea0b..a3cc12b 100644
+--- a/rclc/src/rclc/sleep.c
++++ b/rclc/src/rclc/sleep.c
+@@ -16,8 +16,6 @@
+ 
+ #include "rclc/sleep.h"
+ 
+-
+-
+ #ifdef WIN32
+ #include <Windows.h>
+ #else
