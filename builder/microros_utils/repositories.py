@@ -112,9 +112,9 @@ class Sources:
         ],
         'foxy': [
             Repository("micro-CDR", "https://github.com/eProsima/micro-CDR", "foxy", "ros2"),
-            Repository("Micro-XRCE-DDS-Client", "https://github.com/eProsima/Micro-XRCE-DDS-Client", "foxy", "ros2"),
+            Repository("Micro-XRCE-DDS-Client", "https://github.com/kurisaW/Micro-XRCE-DDS-Client", "foxy-b"),
             Repository("rcl", "https://github.com/micro-ROS/rcl", "foxy"),
-            Repository("rclc", "https://github.com/eProsima/rclc", "foxy"),
+            Repository("rclc", "https://github.com/ros2/rclc", "foxy"),
             Repository("rcutils", "https://github.com/micro-ROS/rcutils", "foxy"),
             Repository("micro_ros_msgs", "https://github.com/micro-ROS/micro_ros_msgs", "foxy"),
             Repository("rmw-microxrcedds", "https://github.com/micro-ROS/rmw-microxrcedds", "foxy"),

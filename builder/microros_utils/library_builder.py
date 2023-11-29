@@ -177,7 +177,9 @@ class Build:
             print("micro-ROS static library build failed\n")
             sys.exit(1)
 
-        os.rename('libmicroros.a', self.library)
+        # os.rename('libmicroros.a', self.library)
+        # In windows10, files cannot be moved directly between different drives, you can use the copy command
+        shutil.copy(self.build_folder + "\\temp\\libmicroros.a", self.includes)
 
         # Copy includes
         shutil.copytree(self.build_folder + "\\mcu\\install\\include", self.includes)
