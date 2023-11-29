@@ -6,9 +6,6 @@
 
 #include "XRCE_DDS_Header.h"
 
-#include <uxr/client/profile/transport/ip/udp/udp_transport.h>
-#include <uxr/client/profile/transport/ip/udp/udp_transport_rtthread.h>
-
 #define STREAM_HISTORY  5
 #define BUFFER_SIZE     UXR_CONFIG_UDP_TRANSPORT_MTU * STREAM_HISTORY
 
@@ -42,16 +39,14 @@ static void uros_entry(void *arg)
 {
 #ifdef UROS_TRANSPORT_TCP
     uxrTCPTransport transport;
-    // uxrTCPPlatform tcp_platform;
 #else
 	uxrUDPTransport transport;
-    uxrUDPPlatform udp_platform;
 #endif
 
     rt_kprintf("Micro-ROS ping-pong demo.\n");
 
 #ifdef UROS_TRANSPORT_TCP
-    if(!uxr_init_tcp_transport(&transport, &tcp_platform, UXR_IPv4, ip, port))
+    if(!uxr_init_tcp_transport(&transport, UXR_IPv4, ip, port))
     {
         rt_kprintf("Error at create transport.\n");
         return;
