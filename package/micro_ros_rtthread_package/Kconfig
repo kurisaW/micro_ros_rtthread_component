@@ -2,7 +2,6 @@
 # Kconfig file for package micro_ros_rtthread_package
 menuconfig PKG_USING_MICRO_ROS_RTTHREAD_PACKAGE
     bool "micro-ROS package for RTThread"
-    select RT_USING_POSIX_CLOCK
     select RT_USING_POSIX_FS
     select RT_USING_POSIX_SOCKET
     select RT_USING_POSIX_SELECT

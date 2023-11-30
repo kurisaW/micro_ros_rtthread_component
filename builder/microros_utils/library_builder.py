@@ -145,7 +145,6 @@ class Build:
         # Generate object files with namespace prefix
         obj_list = []
         os.chdir(aux_naming_folder)
-        # print("-------------Generate object files with namespace prefix------------")
         for root, dirs, files in os.walk(self.mcu_folder + "\\install\\lib"):
             for f in files:
                 if f.endswith('.a'):
@@ -155,7 +154,8 @@ class Build:
                         os.rename(obj, '..\\' + updated_name)
                         obj_list.append(updated_name)
                         print("updated_name:" + updated_name)
-        # pdb.set_trace()
+        pdb.set_trace()
+        print("Whether to package static libraries, before you can save libraries locally")
 
         # Create linker script
         os.chdir(aux_folder)
