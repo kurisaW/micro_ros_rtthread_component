@@ -6,6 +6,7 @@ from distutils.dir_util import copy_tree
 
 from .utils import run_cmd, rmtree
 from .repositories import Repository, Sources
+import pdb
 
 class Build:
     def __init__(self, library_folder, packages_folder, distro, env):
@@ -152,9 +153,13 @@ class Build:
                         updated_name = f.split('.')[0] + "__" + obj
                         os.rename(obj, '..\\' + updated_name)
                         obj_list.append(updated_name)
+                        print("updated_name:" + updated_name)
+        pdb.set_trace()
+        print("Whether to package static libraries, before you can save libraries locally")
 
         # Create linker script
         os.chdir(aux_folder)
+        # create a ar_script.m file to cover content:$(ar_script.write(content))
         with open("ar_script.m", "w+") as ar_script:
             ar_script.write("CREATE libmicroros.a\n")
 
@@ -172,7 +177,9 @@ class Build:
             print("micro-ROS static library build failed\n")
             sys.exit(1)
 
-        os.rename('libmicroros.a', self.library)
+        # os.rename('libmicroros.a', self.library)
+        # In windows10, files cannot be moved directly between different drives, you can use the copy command
+        shutil.copy(self.build_folder + "\\temp\\libmicroros.a", self.library_path)
 
         # Copy includes
         shutil.copytree(self.build_folder + "\\mcu\\install\\include", self.includes)
