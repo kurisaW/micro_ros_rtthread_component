@@ -1,9 +1,11 @@
 from building import *
 import rtconfig
 import sys
+import os
 
 cwd = GetCurrentDir()
 sys.path.append(cwd)
+group = []
 
 from microros_utils.library_builder import Build
 from microros_utils.library_builder import CMakeToolchain
@@ -25,8 +27,9 @@ clean_microros = env.GetOption("clean_microros") is not None
 #################################
 
 if clean_microros:
-	print("Cleaning micro-ROS for RT-Thread\n")
-	rmtree(cwd + '\\libmicroros')
+    print("Cleaning micro-ROS for RT-Thread\n")
+    rmtree(cwd + '\\libmicroros')
+    sys.exit(1)
 
 #################################
 #### Build micro-ROS library ####
@@ -34,60 +37,106 @@ if clean_microros:
 
 if build_microros:
 
-	# Check python3 in PATH
-	env_handler = EnvironmentHandler()
-	if not env_handler.find_and_set_python3():
-		print("Please make sure that a Python 3 installation is available in PATH")
-		sys.exit(1)
+    # Check python3 in PATH
+    env_handler = EnvironmentHandler()
+    if not env_handler.find_and_set_python3():
+        print("Please make sure that a Python 3 installation is available in PATH")
+        sys.exit(1)
 
-	# Install dependencies
-	env_handler.install_python_dependencies(["catkin-pkg", "lark-parser", "empy", "colcon-common-extensions", "importlib-resources", "pyyaml", "pytz", "markupsafe==2.0.1"])
+    # Install dependencies
+    env_handler.install_python_dependencies(["catkin-pkg", "lark-parser", "empy", "colcon-common-extensions", "importlib-resources", "pyyaml", "pytz", "markupsafe==2.0.1"])
 
-	print("Building micro-ROS for RT-Thread")
+    print("Building micro-ROS for RT-Thread")
 
-	# Load micro-ROS build configuration
-	meta = MetaFileGenerator(cwd + '\\user.meta')
-	meta.set_variable("rmw_microxrcedds", "RMW_UXRCE_MAX_NODES", int(GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_MAX_NODES')))
-	meta.set_variable("rmw_microxrcedds", "RMW_UXRCE_MAX_PUBLISHERS", int(GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_MAX_PUBLISHERS')))
-	meta.set_variable("rmw_microxrcedds", "RMW_UXRCE_MAX_SUBSCRIPTIONS", int(GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_MAX_SUBSCRIBERS')))
-	meta.set_variable("rmw_microxrcedds", "RMW_UXRCE_MAX_SERVICES", int(GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_MAX_SERVICES')))
-	meta.set_variable("rmw_microxrcedds", "RMW_UXRCE_MAX_CLIENTS", int(GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_MAX_CLIENTS')))
+    # Load micro-ROS build configuration
+    meta = MetaFileGenerator(cwd + '\\user.meta')
+    meta.set_variable("rmw_microxrcedds", "RMW_UXRCE_MAX_NODES", int(GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_MAX_NODES')))
+    meta.set_variable("rmw_microxrcedds", "RMW_UXRCE_MAX_PUBLISHERS", int(GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_MAX_PUBLISHERS')))
+    meta.set_variable("rmw_microxrcedds", "RMW_UXRCE_MAX_SUBSCRIPTIONS", int(GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_MAX_SUBSCRIBERS')))
+    meta.set_variable("rmw_microxrcedds", "RMW_UXRCE_MAX_SERVICES", int(GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_MAX_SERVICES')))
+    meta.set_variable("rmw_microxrcedds", "RMW_UXRCE_MAX_CLIENTS", int(GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_MAX_CLIENTS')))
+    if GetDepend('RTT_UCLIENT_PLATFORM_RTTHREAD'):
+        if GetDepend('RTT_UCLIENT_PLATFORM_RTTHREAD'):
+            meta.set_variable("microxrcedds_client", "UCLIENT_PLATFORM_RTTHREAD", "ON")
+            if GetDepend('PKG_MICRO_ROS_USE_SERIAL'):
+                meta.set_variable("microxrcedds_client", "UCLIENT_PROFILE_SERIAL", "ON")
+            elif GetDepend('PKG_MICRO_ROS_USE_TCP'):
+                meta.set_variable("microxrcedds_client", "UCLIENT_PROFILE_TCP", "ON")
+            elif GetDepend('PKG_MICRO_ROS_USE_UDP'):
+                meta.set_variable("microxrcedds_client", "UCLIENT_PROFILE_UDP", "ON")
+                meta.set_variable("microxrcedds_client", "UCLIENT_PROFILE_DISCOVERY", "ON")
 
-	# Check selected ROS2 distro
-	if GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_HUMBLE_DISTRO'):
-		distro = "humble"
-	elif GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_FOXY_DISTRO'):
-		distro = "foxy"
-	else:
-		print("Error, no valid ROS2 distrubition selected")
-		sys.exit(1)
+    # Check selected ROS2 distro
+    if GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_HUMBLE_DISTRO'):
+        distro = "humble"
+    elif GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_FOXY_DISTRO'):
+        distro = "foxy"
+    else:
+        print("Error, no valid ROS2 distrubition selected")
+        sys.exit(1)
 
-	# Launch micro-ROS builder
-	modified_env = env_handler.get_env()
-	builder = Build(library_folder=cwd, packages_folder=cwd + '\\extra_packages', distro=distro, env=modified_env)
-	builder.run(cwd + "\\toolchain.cmake", meta.path)
+    # Launch micro-ROS builder
+    modified_env = env_handler.get_env()
+    builder = Build(library_folder=cwd, packages_folder=cwd + '\\extra_packages', distro=distro, env=modified_env)
+    builder.run(cwd + "\\toolchain.cmake", meta.path)
+    sys.exit(1)
 
 ################################
 #### Link micro-ROS library ####
 ################################
 
 # micro-ROS library
+
 INCLUDE_PATH = cwd + '\\libmicroros\\include'
 LIBPATH = [cwd + '\\libmicroros']
 LIBS = ['microros']
+CPPDEFINES = []
 
 # Provided package sources
-package_cwd = os.path.abspath(GetCurrentDir() + "\\..")
-LOCAL_INCLUDE_PATH = package_cwd + '\\include'
-SRC_PATH = package_cwd + '\\src'
-EXAMPLES_PATH = package_cwd + '\\examples'
-SRC = [package_cwd + '\\src\\microros_time.c', package_cwd + '\\src\\microros_rtthread_net_transport.c']
+MICRO_ROS_PKG_PATH = os.path.dirname(cwd)
+LOCAL_INCLUDE_PATH = MICRO_ROS_PKG_PATH + '\\include'
+EXAMPLES_PATH = MICRO_ROS_PKG_PATH + '\\examples'
 
-if GetDepend('PKG_MICRO_ROS_RTTHREAD_PACKAGE_EXAMPLES'):
-    SRC.append(package_cwd + '\\examples\\microros_pub.c')
-    SRC.append(package_cwd + '\\examples\\microros_sub.c')
+CPPPATH = [INCLUDE_PATH, LOCAL_INCLUDE_PATH, EXAMPLES_PATH]
+
+CPPPATH += [MICRO_ROS_PKG_PATH + '\\examples\\msgs']
+CPPPATH += ['examples\\uxr_examples\\PublishHelloWorldP2P']
+# CPPPATH += ['examples\\uxr_examples\\Deployment']
+CPPPATH += ['examples\\ShapesDemo\\Deployment']
+
+if GetDepend('PKG_MICRO_ROS_USE_SERIAL'):
+    SRC = [MICRO_ROS_PKG_PATH + '\\src\\rtt_serial_transport.c']
+elif GetDepend('PKG_MICRO_ROS_USE_TCP'):
+    SRC = [MICRO_ROS_PKG_PATH + '\\src\\rtt_tcp_transport.c']
+elif GetDepend('PKG_MICRO_ROS_USE_UDP'):
+    SRC = [MICRO_ROS_PKG_PATH + '\\src\\rtt_udp_transport.c']
+
+if GetDepend('PKG_RCLC_EXAMPLE'):
+    SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\rclc_examples\\microros_pub.c')
+    SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\rclc_examples\\microros_sub.c')
+    SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\rclc_examples\\micro_ros_ping_pong.c')
+    
+if GetDepend('PKG_UCLIENT_PLATFORM_EXAMPLE'):
+    # SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\msgs\\XRCE_DDS_Header.c')
+    # SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\msgs\\XRCE_DDS_Time.c')
+    # SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\uxr_examples\\common\\uros_test.c')
+
+    # SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\uxr_examples\\\TimeSync\\time_sync.c')
+    # SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\uxr_examples\\\TimeSyncWithCb\\time_sync_cb.c')
+
+    # SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\uxr_examples\\\PublishHelloWorldP2P\\HelloWorld.c')
+    # SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\uxr_examples\\\PublishHelloWorldP2P\\pub_helloworld_p2p.c')
+
+    # SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\uxr_examples\\\Deployment\\HelloWorld.c')
+    # SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\uxr_examples\\\Deployment\\publisher.c')
+    # SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\uxr_examples\\\Deployment\\subscriber.c')
+    # SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\uxr_examples\\\Deployment\\configurator_client.c')
+
+    SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\uxr_examples\\\ShapesDemo\\ShapeType.c')
+    SRC.append(MICRO_ROS_PKG_PATH + '\\examples\\uxr_examples\\\ShapesDemo\\shapes_demo.c')
+
 
 LOCAL_CCFLAGS = ''
 
-group = DefineGroup('microros', SRC, depend = [], CPPPATH = [INCLUDE_PATH, LOCAL_INCLUDE_PATH, SRC_PATH, EXAMPLES_PATH], LOCAL_CCFLAGS = LOCAL_CCFLAGS, LIBS = LIBS, LIBPATH = LIBPATH)
+group = group + DefineGroup('microros', SRC, depend = [], CPPPATH = CPPPATH, LOCAL_CCFLAGS = LOCAL_CCFLAGS, LIBS = LIBS, CPPDEFINES = CPPDEFINES, LIBPATH = LIBPATH)
 Return('group')

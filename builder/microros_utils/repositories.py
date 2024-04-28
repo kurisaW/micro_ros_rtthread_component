@@ -1,6 +1,8 @@
 import os, sys
 import json
 import xml.etree.ElementTree as xml_parser
+import time
+import sys
 
 from .utils import run_cmd
 
@@ -26,12 +28,29 @@ class Repository:
 
     def clone(self, folder):
         self.path = folder + "\\" + self.name
-        # TODO(pablogs) ensure that git is installed
+        attempts = 0
+        # Download reconnect time, 1s by default
+        retry_delay = 1
+        # The number of repository redownloads that fail is defined here
+        max_attempts = 3
+
         command = "git clone -b {} {} {}".format(self.branch, self.url, self.path)
         result, stderr = run_cmd(command, capture_output=True)
 
-        if 0 != result:
-            print("{} clone failed: {}\n".format(self.name, stderr))
+        if result == 0:
+            # Download successfully, exit the loop
+            return
+        else:
+            while attempts < max_attempts:
+                attempts += 1
+                print("{} clone failed! Retrying...")
+                command = "git clone -b {} {} {}".format(self.branch, self.url, self.path)
+                result, stderr = run_cmd(command, capture_output=True)
+                # Wait a while and try again
+                time.sleep(retry_delay)
+
+            # If all attempts fail, print an error message and exit the script
+            print("Max attempts reached. Failed to clone {} after {} attempts.".format(self.name, max_attempts))
             sys.exit(1)
 
     def get_packages(self):
@@ -112,7 +131,7 @@ class Sources:
         ],
         'foxy': [
             Repository("micro-CDR", "https://github.com/eProsima/micro-CDR", "foxy", "ros2"),
-            Repository("Micro-XRCE-DDS-Client", "https://github.com/eProsima/Micro-XRCE-DDS-Client", "foxy", "ros2"),
+            Repository("Micro-XRCE-DDS-Client", "https://github.com/kurisaW/Micro-XRCE-DDS-Client", "foxy-bb"),
             Repository("rcl", "https://github.com/micro-ROS/rcl", "foxy"),
             Repository("rclc", "https://github.com/ros2/rclc", "foxy"),
             Repository("rcutils", "https://github.com/micro-ROS/rcutils", "foxy"),
