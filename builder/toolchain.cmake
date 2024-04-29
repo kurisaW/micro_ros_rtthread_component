@@ -16,18 +16,19 @@ set(CMAKE_CXX_FLAGS_INIT " -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi
 
 get_filename_component(script_path "${CMAKE_CURRENT_LIST_FILE}" ABSOLUTE)
 
-string(REGEX MATCH "^(.*rt-thread)" RTT_ROOT_DIR "${script_path}")
-string(REGEX MATCH "^(.*stm32f407-rt-spark)" BSP_ROOT_DIR "${script_path}")
+message("################################ Toolchain include ######################################")
+string(REGEX MATCH "^(.*Project_root)" BSP_ROOT_DIR "${script_path}")
+message("BSP_ROOT_DIR Path: ${BSP_ROOT_DIR}")
 
-include_directories(SYSTEM
-${RTT_ROOT_DIR}/include              # kernel include
-${RTT_ROOT_DIR}/components/finsh     # finsh include
-${RTT_ROOT_DIR}/components/net/sal/include                      # #include <netdb.h>
-${RTT_ROOT_DIR}/components/net/sal/include/socket               
-${RTT_ROOT_DIR}/components/net/sal/include/socket/sys_socket    # #include <sys/socket.h>
-${RTT_ROOT_DIR}/components/net/netdev/include
-${RTT_ROOT_DIR}/components/net/netdev/include/arpa              # #include <arpa/inet.h>
-${BSP_ROOT_DIR}                                                 # rtconfig.h
+include_directories(
+    ${BSP_ROOT_DIR}/rt-thread/include              # kernel include
+    ${BSP_ROOT_DIR}/rt-thread/components/finsh     # finsh include
+    ${BSP_ROOT_DIR}/rt-thread/components/net/sal/include                      # #include <netdb.h>
+    ${BSP_ROOT_DIR}/rt-thread/components/net/sal/include/socket               
+    ${BSP_ROOT_DIR}/rt-thread/components/net/sal/include/socket/sys_socket    # #include <sys/socket.h>
+    ${BSP_ROOT_DIR}/rt-thread/components/net/netdev/include
+    ${BSP_ROOT_DIR}/rt-thread/components/net/netdev/include/arpa              # #include <arpa/inet.h>
+    ${BSP_ROOT_DIR}                                                           # rtconfig.h
 )
 
 set(__BIG_ENDIAN__ 0)

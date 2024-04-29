@@ -19,64 +19,68 @@
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
 
-#include <std_msgs/msg/int32.h>
+#include <std_msgs/msg/string.h>  // Use string message type
 
 #define DBG_TAG "sub_example"
-#define DBG_LVL DBG_INFO 
+#define DBG_LVL DBG_INFO
 #include <rtdbg.h>
 
-rcl_subscription_t subscriber;
-std_msgs__msg__Int32 msg;
-rclc_executor_t executor;
-rclc_support_t support;
-rcl_allocator_t allocator;
-rcl_node_t node;
+#define ARRAY_LEN 200
 
-static void subscription_callback(const void * msgin)
+#define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Aborting.\n",__LINE__,(int)temp_rc); return 1;}}
+#define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Continuing.\n",__LINE__,(int)temp_rc);}}
+
+rcl_subscription_t subscriber;
+std_msgs__msg__String msg;
+char test_array[ARRAY_LEN];
+
+void subscription_callback(const void * msgin)
 {
-    const std_msgs__msg__Int32 * msg = (const std_msgs__msg__Int32 *)msgin;
-    rt_kprintf("[micro_ros] received data %d\n", msg->data);
+    const std_msgs__msg__String * msg = (const std_msgs__msg__String *)msgin;
+    printf("I have heard: \"%s\"\n", msg->data.data);
 }
 
-static void microros_sub_int32_thread_entry(void *parameter)
+static void microros_sub_string_thread_entry(void *parameter)
 {
-    allocator = rcl_get_default_allocator();
+    memset(test_array,'z',ARRAY_LEN);
 
-    //create init_options
-    if (rclc_support_init(&support, 0, NULL, &allocator) != RCL_RET_OK)
-    {
-        rt_kprintf("[micro_ros] failed to initialize\n");
-        return;
-    };
+    rcl_allocator_t allocator = rcl_get_default_allocator();
+    rclc_support_t support;
+
+    // create init_options
+    RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
 
     // create node
-    if (rclc_node_init_default(&node, "micro_ros_rtt_sub_int32_node", "", &support) != RCL_RET_OK)
-    {
-        rt_kprintf("[micro_ros] failed to create node\n");
-        return;
-    }
-    rt_kprintf("[micro_ros] node created\n");
+    rcl_node_t node;
+    RCCHECK(rclc_node_init_default(&node, "string_node", "", &support));
 
     // create subscriber
-    rclc_subscription_init_default(
-      &subscriber,
-      &node,
-      ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-      "micro_ros_rtt_subscriber");
+    RCCHECK(rclc_subscription_init_default(
+        &subscriber,
+        &node,
+        ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String),
+        "/string_publisher"));
 
     // create executor
-    rclc_executor_init(&executor, &support.context, 1, &allocator);
-    rclc_executor_add_subscription(&executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA);
-    rt_kprintf("[micro_ros] executor created\n");
+    rclc_executor_t executor = rclc_executor_get_zero_initialized_executor();
+    RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
+    RCCHECK(rclc_executor_add_subscription(&executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
+
+    msg.data.data = (char * ) malloc(ARRAY_LEN * sizeof(char));
+    msg.data.size = 0;
+    msg.data.capacity = ARRAY_LEN;
 
     while(1)
     {
         rt_thread_mdelay(100);
         rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
     }
+
+    RCCHECK(rcl_subscription_fini(&subscriber, &node));
+    RCCHECK(rcl_node_fini(&node));
 }
 
-static void microros_sub_int32(int argc, char* argv[])
+static void microros_sub_string(int argc, char* argv[])
 {
 #if defined(PKG_MICRO_ROS_USE_SERIAL)
     // Serial setup
@@ -84,13 +88,13 @@ static void microros_sub_int32(int argc, char* argv[])
 
 #elif defined(PKG_MICRO_ROS_USE_UDP)
     // UDP setup
-     if(argc == 1) 
+     if(argc == 1)
      {
-		if((MICRO_ROS_UDP_IP == RT_NULL) && (MICRO_ROS_UDP_PORT == RT_NULL))
-		{
-			LOG_E("Please refer to the parameters correctly!");
-			LOG_E("Or you should define the 'MICRO_ROS_UDP_IP' and 'MICRO_ROS_UDP_PORT' variables in the rtconfig.h file");
-		}
+        if((MICRO_ROS_UDP_IP == RT_NULL) && (MICRO_ROS_UDP_PORT == RT_NULL))
+        {
+            LOG_E("Please refer to the parameters correctly!");
+            LOG_E("Or you should define the 'MICRO_ROS_UDP_IP' and 'MICRO_ROS_UDP_PORT' variables in the rtconfig.h file");
+        }
         set_microros_udp_transports(MICRO_ROS_UDP_IP, MICRO_ROS_UDP_PORT);
         LOG_I("The current proxy IP address is [%s] | Agent port is [%s].", MICRO_ROS_UDP_IP, MICRO_ROS_UDP_PORT);
      }
@@ -102,13 +106,13 @@ static void microros_sub_int32(int argc, char* argv[])
 
 #elif defined(PKG_MICRO_ROS_USE_TCP)
     // TCP setup
-     if(argc == 1) 
+     if(argc == 1)
      {
-		if((MICRO_ROS_TCP_IP == RT_NULL) && (MICRO_ROS_TCP_PORT == RT_NULL))
-		{
-			LOG_E("Please refer to the parameters correctly!");
-			OG_E("Or you should define the 'MICRO_ROS_TCP_IP' and 'MICRO_ROS_TCP_PORT' variables in the rtconfig.h file");
-		}
+        if((MICRO_ROS_TCP_IP == RT_NULL) && (MICRO_ROS_TCP_PORT == RT_NULL))
+        {
+            LOG_E("Please refer to the parameters correctly!");
+            OG_E("Or you should define the 'MICRO_ROS_TCP_IP' and 'MICRO_ROS_TCP_PORT' variables in the rtconfig.h file");
+        }
         set_microros_tcp_transports(MICRO_ROS_TCP_IP, MICRO_ROS_TCP_PORT);
         LOG_I("The current proxy IP address is [%s] | Agent port is [%s].", MICRO_ROS_TCP_IP, MICRO_ROS_TCP_PORT);
      }
@@ -119,20 +123,20 @@ static void microros_sub_int32(int argc, char* argv[])
      }
 #endif
 
-    rt_thread_t thread = rt_thread_create("mr_subint32", microros_sub_int32_thread_entry, RT_NULL, 2048, 25, 10);
+    rt_thread_t thread = rt_thread_create("mr_substring", microros_sub_string_thread_entry, RT_NULL, 2048, 25, 10);
     if(thread != RT_NULL)
     {
         rt_thread_startup(thread);
-        rt_kprintf("[micro_ros] New thread mr_subint32\n");
+        rt_kprintf("[micro_ros] New thread mr_substring\n");
     }
     else
     {
-        rt_kprintf("[micro_ros] Failed to create thread mr_subint32\n");
+        rt_kprintf("[micro_ros] Failed to create thread mr_substring\n");
     }
 
-    // now you can publish a message to turn on/off the LED
-    // ros2 topic pub --once /micro_ros_rtt_subscriber std_msgs/msg/Int32 data:\ 0
+    // Now you can publish a message to send a string
+    // Example: ros2 topic pub --once /micro_ros_rtt_subscriber std_msgs/msg/String "{data: 'Hello, micro-ROS!'}"
 }
-MSH_CMD_EXPORT(microros_sub_int32, micro ros subscribe int32 example)
+MSH_CMD_EXPORT(microros_sub_string, micro ros subscribe string example)
 
 #endif  // PKG_RCLC_EXAMPLE
