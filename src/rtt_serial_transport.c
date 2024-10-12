@@ -63,7 +63,7 @@ static struct rt_semaphore micro_ros_rx_sem;
 static rt_device_t micro_ros_serial;
 
 #ifndef MICRO_ROS_SERIAL_NAME
-    #define MICRO_ROS_SERIAL_NAME "vcom"
+    #define MICRO_ROS_SERIAL_NAME "uart3"
 #endif
 
 int clock_gettime(clockid_t unused, struct timespec *tp)

@@ -5,7 +5,7 @@ set(CMAKE_SYSTEM_PROCESSOR cortex-m4)
 set(CMAKE_CROSSCOMPILING 1)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
-set(TARGET "D:/toolschain/gcc-arm-none-eabi-10-2020-q4-major-win32/bin/")
+set(TARGET "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2020-q4-major/bin/")
 set(CMAKE_C_COMPILER "${TARGET}arm-none-eabi-gcc.exe")
 set(CMAKE_CXX_COMPILER "${TARGET}arm-none-eabi-g++.exe")
 set(CMAKE_AR "${TARGET}arm-none-eabi-ar.exe")
